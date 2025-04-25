@@ -1,5 +1,6 @@
 ﻿using ExcelParser.Core.Abstractions;
 using ExcelParser.Core.Parsers.Strategies;
+using System.Diagnostics;
 
 
 namespace ExcelParser.Core.Parsers;
@@ -20,14 +21,17 @@ public static class ExcelParserContext
 
         if (rowsCount < 1000)
         {
+            Debug.WriteLine("Обычная стратегия");
             strategy = new SimpleParseStrategy();
         }
         else if (rowsCount < 10000)
         {
+            Debug.WriteLine("ParallelParseStrategy стратегия");
             strategy = new ParallelParseStrategy();
         }
         else
         {
+            Debug.WriteLine("Dataflow стратегия");
             strategy = new DataflowParseStrategy();
         }
 

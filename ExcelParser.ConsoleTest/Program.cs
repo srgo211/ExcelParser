@@ -22,8 +22,8 @@ var parserService = provider.GetRequiredService<IExcelParserService>();
 
 
 
-//await Test1Async();
-await Test2Async();
+await Test1Async();
+//await Test2Async();
 
 Console.WriteLine("\nНажмите любую клавишу для выхода...");
 Console.ReadKey();
