@@ -7,8 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Core\Adapters\" />
     <Folder Include="Core\Models\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EPPlus" Version="7.7.1" />
   </ItemGroup>
 
 </Project>
