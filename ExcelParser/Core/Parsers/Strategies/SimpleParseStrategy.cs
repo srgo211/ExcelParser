@@ -15,38 +15,28 @@ public sealed class SimpleParseStrategy : IExcelParseStrategy
     {
         var result = new List<TModel>();
 
-        var startRow = sheet.StartRow;
-        var endRow = sheet.EndRow;
-        var startCol = sheet.StartColumn;
-        var endCol = sheet.EndColumn;
-
-        if (startRow == 0 || endRow == 0 || startCol == 0 || endCol == 0)
-            return result;
-
-        var headerMap = new Dictionary<int, PropertyInfo>();
+        var headerMap = MappingHeader.Map<TModel>(sheet);
+        if (!headerMap.Any()) return [];
         var properties = typeof(TModel).GetProperties();
 
+        var modelType = typeof(TModel);
+
         // Маппинг заголовков
-        for (int col = startCol; col <= endCol; col++)
+        for (int col = sheet.StartColumn; col <= sheet.EndColumn; col++)
         {
-            var header = sheet.GetCellValue(startRow, col).Trim();
+            var header = NormalizeHeader.Normalize(sheet.GetCellValue(sheet.StartRow, col));
             if (string.IsNullOrWhiteSpace(header))
                 continue;
 
-            var property = properties.FirstOrDefault(p =>
-            {
-                var attr = p.GetCustomAttribute<ExcelColumnAttribute>();
-                return attr != null ? attr.ColumnName.Equals(header, StringComparison.OrdinalIgnoreCase) : p.Name.Equals(header, StringComparison.OrdinalIgnoreCase);
-            });
-
+            var property = ExcelPropertyMatcher.FindMatchingProperty(modelType, properties, header);
             if (property != null)
             {
                 headerMap[col] = property;
             }
         }
 
-        // Чтение данных
-        for (int row = startRow + 1; row <= endRow; row++)
+        // Чтение данных строк
+        for (int row = sheet.StartRow + 1; row <= sheet.EndRow; row++)
         {
             var model = new TModel();
 
@@ -64,7 +54,7 @@ public sealed class SimpleParseStrategy : IExcelParseStrategy
                 }
                 catch
                 {
-                    // Тут потом можно добавить логирование ошибок парсинга
+                    // Ошибки парсинга можно логировать
                 }
             }
 
@@ -74,5 +64,5 @@ public sealed class SimpleParseStrategy : IExcelParseStrategy
         return result;
     }
 
-   
+    
 }

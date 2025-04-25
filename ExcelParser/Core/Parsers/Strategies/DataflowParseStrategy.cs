@@ -1,11 +1,7 @@
-﻿
-
-using System.Collections.Concurrent;
-using System.Reflection;
-using System.Threading.Tasks.Dataflow;
-using ExcelParser.Core.Abstractions;
-using ExcelParser.Core.Attributes;
+﻿using ExcelParser.Core.Abstractions;
 using ExcelParser.Core.Parsers.Helpers;
+using System.Collections.Concurrent;
+using System.Threading.Tasks.Dataflow;
 
 namespace ExcelParser.Core.Parsers.Strategies;
 
@@ -19,35 +15,9 @@ public sealed class DataflowParseStrategy : IExcelParseStrategy
     {
         var result = new ConcurrentDictionary<int, TModel>();
 
-        var startRow = sheet.StartRow;
-        var endRow = sheet.EndRow;
-        var startCol = sheet.StartColumn;
-        var endCol = sheet.EndColumn;
+        var headerMap = MappingHeader.Map<TModel>(sheet);
+        if(!headerMap.Any()) return [];
 
-        if (startRow == 0 || endRow == 0 || startCol == 0 || endCol == 0)
-            return [];
-
-        var headerMap = new Dictionary<int, PropertyInfo>();
-        var properties = typeof(TModel).GetProperties();
-
-        // Маппинг заголовков
-        for (int col = startCol; col <= endCol; col++)
-        {
-            var header = sheet.GetCellValue(startRow, col).Trim();
-            if (string.IsNullOrWhiteSpace(header))
-                continue;
-
-            var property = properties.FirstOrDefault(p =>
-            {
-                var attr = p.GetCustomAttribute<ExcelColumnAttribute>();
-                return attr != null ? attr.ColumnName.Equals(header, StringComparison.OrdinalIgnoreCase) : p.Name.Equals(header, StringComparison.OrdinalIgnoreCase);
-            });
-
-            if (property != null)
-            {
-                headerMap[col] = property;
-            }
-        }
 
         // Блок обработки строк
         var transformBlock = new TransformBlock<int, (int Row, TModel Item)?>(row =>
@@ -77,7 +47,7 @@ public sealed class DataflowParseStrategy : IExcelParseStrategy
         new ExecutionDataflowBlockOptions
         {
             MaxDegreeOfParallelism = Environment.ProcessorCount,
-            BoundedCapacity = Environment.ProcessorCount * 10 // ограничение очереди
+            BoundedCapacity = Environment.ProcessorCount * 10
         });
 
         // Блок сбора результатов
@@ -94,7 +64,7 @@ public sealed class DataflowParseStrategy : IExcelParseStrategy
         transformBlock.LinkTo(actionBlock, new DataflowLinkOptions { PropagateCompletion = true });
 
         // Подача строк в pipeline
-        for (int row = startRow + 1; row <= endRow; row++)
+        for (int row = sheet.StartRow + 1; row <= sheet.EndRow; row++)
         {
             await transformBlock.SendAsync(row);
         }
@@ -107,4 +77,6 @@ public sealed class DataflowParseStrategy : IExcelParseStrategy
             .Select(x => x.Value)
             .ToList();
     }
+
+    
 }

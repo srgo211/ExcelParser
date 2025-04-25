@@ -1,9 +1,7 @@
 ﻿using ExcelParser.Core.Abstractions;
-using ExcelParser.Core.Attributes;
-using System.Collections.Concurrent;
-using System.Globalization;
-using System.Reflection;
 using ExcelParser.Core.Parsers.Helpers;
+using System.Collections.Concurrent;
+using System.Reflection;
 
 namespace ExcelParser.Core.Parsers.Strategies;
 
@@ -17,38 +15,11 @@ public sealed class ParallelParseStrategy : IExcelParseStrategy
     {
         var result = new ConcurrentDictionary<int, TModel>();
 
-        var startRow = sheet.StartRow;
-        var endRow = sheet.EndRow;
-        var startCol = sheet.StartColumn;
-        var endCol = sheet.EndColumn;
-
-        if (startRow == 0 || endRow == 0 || startCol == 0 || endCol == 0)
-            return [];
-
-        var headerMap = new Dictionary<int, PropertyInfo>();
-        var properties = typeof(TModel).GetProperties();
-
-        // Маппинг заголовков
-        for (int col = startCol; col <= endCol; col++)
-        {
-            var header = sheet.GetCellValue(startRow, col).Trim();
-            if (string.IsNullOrWhiteSpace(header))
-                continue;
-
-            var property = properties.FirstOrDefault(p =>
-            {
-                var attr = p.GetCustomAttribute<ExcelColumnAttribute>();
-                return attr != null ? attr.ColumnName.Equals(header, StringComparison.OrdinalIgnoreCase) : p.Name.Equals(header, StringComparison.OrdinalIgnoreCase);
-            });
-
-            if (property != null)
-            {
-                headerMap[col] = property;
-            }
-        }
+        var headerMap = MappingHeader.Map<TModel>(sheet);
+        if (!headerMap.Any()) return [];
 
         // Параллельное чтение строк
-        Parallel.For(startRow + 1, endRow + 1, row =>
+        Parallel.For(sheet.StartRow + 1, sheet.EndRow + 1, row =>
         {
             var model = new TModel();
 
@@ -66,7 +37,7 @@ public sealed class ParallelParseStrategy : IExcelParseStrategy
                 }
                 catch
                 {
-                    // Можно добавить логирование ошибок
+                    // Ошибки парсинга можно логировать
                 }
             }
 
@@ -79,6 +50,5 @@ public sealed class ParallelParseStrategy : IExcelParseStrategy
             .ToList();
     }
 
-   
+    
 }
-

@@ -3,6 +3,7 @@ using ExcelParser.Core.Abstractions;
 using ExcelParser.Core.Adapters;
 using ExcelParser.Core.Attributes;
 using ExcelParser.Core.Parsers;
+using ExcelParser.Core.Parsers.Fluent;
 using Microsoft.Extensions.DependencyInjection;
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -60,6 +61,15 @@ async Task Test2Async()
         ["Товары"]     = typeof(Product),
         ["Контракты"]  = typeof(Contract)
     };
+
+    ExcelMappingRegistry.Register<Contract>(config =>
+    {
+        config.Map(c => c.ContractNumber, "Номер договора");
+        config.Map(c => c.Partner, "Контрагент");
+        config.Map(c => c.SigningDate, "Дата подписания");
+    });
+
+
     string path = @"D:\Test\test_multisheet.xlsx";
     using var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
 
@@ -130,14 +140,9 @@ public class Product
 }
 
 public class Contract
-{
-    [ExcelColumn("Номер договора")]
-    public string ContractNumber { get; set; } = default!;
-
-    [ExcelColumn("Контрагент")]
-    public string Partner { get; set; } = default!;
-
-    [ExcelColumn("Дата подписания")]
+{    
+    public string ContractNumber { get; set; } = default!;   
+    public string Partner { get; set; } = default!;    
     public DateTime SigningDate { get; set; }
 }
 
