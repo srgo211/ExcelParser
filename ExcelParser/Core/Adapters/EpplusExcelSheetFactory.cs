@@ -17,4 +17,23 @@ public sealed class EpplusExcelSheetFactory : IExcelSheetFactory
 
         return new EpplusExcelSheetWithPackage(sheet, package); // Оборачиваем в обёртку
     }
+
+   
+
+    public Task<List<(string SheetName, IExcelSheet Sheet)>> CreateAllSheetsFromStreamAsync(Stream stream)
+    {
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+        var package = new ExcelPackage(stream);
+
+        var result = new List<(string SheetName, IExcelSheet Sheet)>();
+
+        foreach (var worksheet in package.Workbook.Worksheets)
+        {
+            result.Add((worksheet.Name, new EpplusExcelSheet(worksheet)));
+        }
+
+        return Task.FromResult(result);
+    }
+
 }

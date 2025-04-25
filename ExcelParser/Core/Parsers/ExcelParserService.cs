@@ -1,4 +1,5 @@
-﻿using ExcelParser.Core.Abstractions;
+﻿using System.Collections;
+using ExcelParser.Core.Abstractions;
 
 namespace ExcelParser.Core.Parsers;
 
@@ -21,5 +22,37 @@ public class ExcelParserService : IExcelParserService
     {
         var sheet = await _sheetFactory.CreateFromStreamAsync(stream, sheetName);
         return await ParseAsync<TModel>(sheet);
+    }
+
+    public async Task<Dictionary<string, IList>> ParseSheetsWithMappingAsync(Stream stream, Dictionary<string, Type> sheetMappings)
+    {
+        var sheets = await _sheetFactory.CreateAllSheetsFromStreamAsync(stream);
+
+        var result = new Dictionary<string, IList>();
+
+        foreach (var (sheetName, modelType) in sheetMappings)
+        {
+            var sheet = sheets.FirstOrDefault(s => s.SheetName.Equals(sheetName, StringComparison.OrdinalIgnoreCase)).Sheet;
+            if (sheet == null)
+                continue;
+
+            var parsedList = await ParseByTypeAsync(sheet, modelType);
+            result.Add(sheetName, parsedList);
+        }
+
+        return result;
+    }
+
+    private async Task<IList> ParseByTypeAsync(IExcelSheet sheet, Type modelType)
+    {
+        var method = typeof(ExcelParserContext)
+            .GetMethod(nameof(ExcelParserContext.ParseAsync))!
+            .MakeGenericMethod(modelType);
+
+        var task = (Task)method.Invoke(null, new object[] { sheet })!;
+        await task.ConfigureAwait(false);
+
+        var resultProperty = task.GetType().GetProperty("Result")!;
+        return (IList)resultProperty.GetValue(task)!;
     }
 }
