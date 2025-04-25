@@ -9,11 +9,12 @@ public sealed class EpplusExcelSheetFactory : IExcelSheetFactory
     {
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
-        using var package = new ExcelPackage(stream);
-
+        var package = new ExcelPackage(stream); // ❗ не using
         var worksheet = package.Workbook.Worksheets[sheetName]
                         ?? throw new ArgumentException($"Лист '{sheetName}' не найден в файле.");
 
-        return new EpplusExcelSheet(worksheet);
+        var sheet = new EpplusExcelSheet(worksheet);
+
+        return new EpplusExcelSheetWithPackage(sheet, package); // Оборачиваем в обёртку
     }
 }

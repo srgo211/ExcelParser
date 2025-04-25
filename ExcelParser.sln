@@ -5,6 +5,8 @@ VisualStudioVersion = 17.12.35527.113 d17.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelParser", "ExcelParser\ExcelParser.csproj", "{CDC6E986-7FCA-4988-8E04-FAD4D2CC03FB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelParser.ConsoleTest", "ExcelParser.ConsoleTest\ExcelParser.ConsoleTest.csproj", "{AE92C267-71B9-4631-A3FD-5808DA36D0B1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{CDC6E986-7FCA-4988-8E04-FAD4D2CC03FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CDC6E986-7FCA-4988-8E04-FAD4D2CC03FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CDC6E986-7FCA-4988-8E04-FAD4D2CC03FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE92C267-71B9-4631-A3FD-5808DA36D0B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE92C267-71B9-4631-A3FD-5808DA36D0B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE92C267-71B9-4631-A3FD-5808DA36D0B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE92C267-71B9-4631-A3FD-5808DA36D0B1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

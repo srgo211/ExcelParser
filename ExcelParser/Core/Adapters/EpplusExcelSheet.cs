@@ -18,13 +18,13 @@ public sealed class EpplusExcelSheet : IExcelSheet
         _worksheet = worksheet ?? throw new ArgumentNullException(nameof(worksheet));
     }
 
-    public int StartRow => _worksheet.Dimension?.Start.Row ?? 0;
+    public int StartRow => _worksheet?.Dimension?.Start.Row ?? 0;
 
-    public int EndRow => _worksheet.Dimension?.End.Row ?? 0;
+    public int EndRow => _worksheet?.Dimension?.End.Row ?? 0;
 
-    public int StartColumn => _worksheet.Dimension?.Start.Column ?? 0;
+    public int StartColumn => _worksheet?.Dimension?.Start.Column ?? 0;
 
-    public int EndColumn => _worksheet.Dimension?.End.Column ?? 0;
+    public int EndColumn => _worksheet?.Dimension?.End.Column ?? 0;
 
     public string GetCellValue(int row, int column)
     {
