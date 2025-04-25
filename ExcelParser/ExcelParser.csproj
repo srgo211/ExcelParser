@@ -9,7 +9,6 @@
   <ItemGroup>
     <Folder Include="Core\Adapters\" />
     <Folder Include="Core\Models\" />
-    <Folder Include="Core\Parsers\" />
   </ItemGroup>
 
 </Project>
