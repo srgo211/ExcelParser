@@ -14,8 +14,7 @@ public sealed class EpplusExcelSheet : IExcelSheet
     private readonly ExcelWorksheet _worksheet;
 
     public EpplusExcelSheet(ExcelWorksheet worksheet)
-    {
-        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+    {        
         _worksheet = worksheet ?? throw new ArgumentNullException(nameof(worksheet));
     }
 
