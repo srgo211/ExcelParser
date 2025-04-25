@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <Folder Include="Core\Models\" />
-    <Folder Include="Core\Parsers\Strategies\" />
   </ItemGroup>
 
   <ItemGroup>

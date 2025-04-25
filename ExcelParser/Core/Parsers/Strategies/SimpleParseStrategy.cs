@@ -3,15 +3,15 @@ using ExcelParser.Core.Attributes;
 using System.Globalization;
 using System.Reflection;
 
-namespace ExcelParser.Core.Parsers;
+namespace ExcelParser.Core.Parsers.Strategies;
 
 /// <summary>
-/// Универсальный парсер Excel-листа в коллекцию моделей.
-/// Работает через абстракцию IExcelSheet и поддерживает сопоставление колонок по атрибутам или имени свойства.
+/// Стратегия простого последовательного парсинга Excel без распараллеливания.
+/// Используется для маленьких файлов.
 /// </summary>
-public static class ExcelSheetParser
+public sealed class SimpleParseStrategy : IExcelParseStrategy
 {
-    public static async Task<List<TModel>> ParseAsync<TModel>(IExcelSheet sheet) where TModel : new()
+    public async Task<List<TModel>> ParseAsync<TModel>(IExcelSheet sheet) where TModel : new()
     {
         var result = new List<TModel>();
 
@@ -24,10 +24,9 @@ public static class ExcelSheetParser
             return result;
 
         var headerMap = new Dictionary<int, PropertyInfo>();
-
         var properties = typeof(TModel).GetProperties();
 
-        // 1. Маппинг колонок по заголовкам
+        // Маппинг заголовков
         for (int col = startCol; col <= endCol; col++)
         {
             var header = sheet.GetCellValue(startRow, col).Trim();
@@ -46,7 +45,7 @@ public static class ExcelSheetParser
             }
         }
 
-        // 2. Чтение данных строк
+        // Чтение данных
         for (int row = startRow + 1; row <= endRow; row++)
         {
             var model = new TModel();
@@ -65,7 +64,7 @@ public static class ExcelSheetParser
                 }
                 catch
                 {
-                    // Тут можно будет добавить логирование ошибок парсинга, чтобы не падать полностью
+                    // Тут потом можно добавить логирование ошибок парсинга
                 }
             }
 
@@ -103,5 +102,4 @@ public static class ExcelSheetParser
         //Конвертируем стандартно через локаль
         return Convert.ChangeType(value, underlyingType, CultureInfo.CurrentCulture);
     }
-
 }
