@@ -1,7 +1,7 @@
 ﻿using ExcelParser.Core.Abstractions;
 using OfficeOpenXml;
 
-namespace ExcelParser.Core.Adapters;
+namespace ExcelParser.Core.Adapters.Epplus;
 
 public sealed class EpplusExcelSheetFactory : IExcelSheetFactory
 {
@@ -18,7 +18,7 @@ public sealed class EpplusExcelSheetFactory : IExcelSheetFactory
         return new EpplusExcelSheetWithPackage(sheet, package); // Оборачиваем в обёртку
     }
 
-   
+
 
     public Task<List<(string SheetName, IExcelSheet Sheet)>> CreateAllSheetsFromStreamAsync(Stream stream)
     {

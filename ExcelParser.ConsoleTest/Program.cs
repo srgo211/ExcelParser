@@ -1,17 +1,21 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using ExcelParser.Core.Abstractions;
-using ExcelParser.Core.Adapters;
+using ExcelParser.Core.Adapters.Epplus;
+using ExcelParser.Core.Adapters.ExcelDataReader;
 using ExcelParser.Core.Attributes;
 using ExcelParser.Core.Parsers;
 using ExcelParser.Core.Parsers.Fluent;
 using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics;
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 Console.WriteLine("Hello, World!");
 // 1. Настройка DI
 var services = new ServiceCollection();
 
-services.AddScoped<IExcelSheetFactory, EpplusExcelSheetFactory>();
+//services.AddScoped<IExcelSheetFactory, EpplusExcelSheetFactory>();
+services.AddScoped<IExcelSheetFactory, ExcelDataReaderSheetFactory>();
+
 services.AddScoped<IExcelParserService, ExcelParserService>();
 
 var provider = services.BuildServiceProvider();
@@ -21,9 +25,11 @@ var parserService = provider.GetRequiredService<IExcelParserService>();
 
 
 
-
+Stopwatch stopwatch = Stopwatch.StartNew();
 await Test1Async();
 //await Test2Async();
+stopwatch.Stop();
+Console.WriteLine($"Время выполнения: {stopwatch.ElapsedMilliseconds} мс");
 
 Console.WriteLine("\nНажмите любую клавишу для выхода...");
 Console.ReadKey();

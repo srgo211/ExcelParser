@@ -1,7 +1,7 @@
 ﻿using ExcelParser.Core.Abstractions;
 using OfficeOpenXml;
 
-namespace ExcelParser.Core.Adapters;
+namespace ExcelParser.Core.Adapters.Epplus;
 
 
 
@@ -14,7 +14,7 @@ public sealed class EpplusExcelSheet : IExcelSheet
     private readonly ExcelWorksheet _worksheet;
 
     public EpplusExcelSheet(ExcelWorksheet worksheet)
-    {        
+    {
         _worksheet = worksheet ?? throw new ArgumentNullException(nameof(worksheet));
     }
 

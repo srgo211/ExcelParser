@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ExcelParser.Core.Adapters;
+namespace ExcelParser.Core.Adapters.Epplus;
 
 /// <summary>
 /// Обёртка для работы с ExcelSheet и управлением временем жизни ExcelPackage.
