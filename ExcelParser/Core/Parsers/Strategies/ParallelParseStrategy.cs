@@ -1,19 +1,21 @@
 ﻿using ExcelParser.Core.Abstractions;
 using ExcelParser.Core.Attributes;
-using ExcelParser.Core.Parsers.Helpers;
+using System.Collections.Concurrent;
+using System.Globalization;
 using System.Reflection;
+using ExcelParser.Core.Parsers.Helpers;
 
 namespace ExcelParser.Core.Parsers.Strategies;
 
 /// <summary>
-/// Стратегия простого последовательного парсинга Excel без распараллеливания.
-/// Используется для маленьких файлов.
+/// Стратегия параллельного парсинга Excel через Parallel.For.
+/// Используется для файлов среднего размера.
 /// </summary>
-public sealed class SimpleParseStrategy : IExcelParseStrategy
+public sealed class ParallelParseStrategy : IExcelParseStrategy
 {
     public async Task<List<TModel>> ParseAsync<TModel>(IExcelSheet sheet) where TModel : new()
     {
-        var result = new List<TModel>();
+        var result = new ConcurrentDictionary<int, TModel>();
 
         var startRow = sheet.StartRow;
         var endRow = sheet.EndRow;
@@ -21,7 +23,7 @@ public sealed class SimpleParseStrategy : IExcelParseStrategy
         var endCol = sheet.EndColumn;
 
         if (startRow == 0 || endRow == 0 || startCol == 0 || endCol == 0)
-            return result;
+            return [];
 
         var headerMap = new Dictionary<int, PropertyInfo>();
         var properties = typeof(TModel).GetProperties();
@@ -45,8 +47,8 @@ public sealed class SimpleParseStrategy : IExcelParseStrategy
             }
         }
 
-        // Чтение данных
-        for (int row = startRow + 1; row <= endRow; row++)
+        // Параллельное чтение строк
+        Parallel.For(startRow + 1, endRow + 1, row =>
         {
             var model = new TModel();
 
@@ -64,15 +66,19 @@ public sealed class SimpleParseStrategy : IExcelParseStrategy
                 }
                 catch
                 {
-                    // Тут потом можно добавить логирование ошибок парсинга
+                    // Можно добавить логирование ошибок
                 }
             }
 
-            result.Add(model);
-        }
+            result.TryAdd(row, model);
+        });
 
-        return result;
+        return result
+            .OrderBy(x => x.Key)
+            .Select(x => x.Value)
+            .ToList();
     }
 
    
 }
+
