@@ -48,19 +48,18 @@ public class ExcelParserService : IExcelParserService
     {
         var result = new Dictionary<Type, IList>();
 
-        // Создаём списки для каждой модели
+        // Создание коллекций для каждой модели
         foreach (var mapping in mappings)
         {
             var listType = typeof(List<>).MakeGenericType(mapping.ModelType);
             result[mapping.ModelType] = (IList)Activator.CreateInstance(listType)!;
         }
 
-        // Флаги начала и активности моделей
+        // Состояние моделей
         var modelStarted = mappings.ToDictionary(m => m.ModelType, _ => false);
         var modelActive = mappings.ToDictionary(m => m.ModelType, _ => true);
-
-        // Стартовые строки для пропуска заголовков
         var modelStartRow = mappings.ToDictionary(m => m.ModelType, m => sheet.StartRow + m.SkipRows);
+        var emptyRowCounter = mappings.ToDictionary(m => m.ModelType, _ => 0);
 
         for (int row = sheet.StartRow + 1; row <= sheet.EndRow; row++)
         {
@@ -69,7 +68,7 @@ public class ExcelParserService : IExcelParserService
                 if (!modelActive[mapping.ModelType])
                     continue;
 
-                // Пропускаем строки до старта модели (если есть Skip)
+                // Пропускаем строки заголовков
                 if (row <= modelStartRow[mapping.ModelType])
                     continue;
 
@@ -80,7 +79,7 @@ public class ExcelParserService : IExcelParserService
                 {
                     if (hasData)
                     {
-                        // Если требуется, проверяем StartKeyword
+                        // Проверяем StartKeyword, если задан
                         if (!string.IsNullOrWhiteSpace(mapping.StartKeyword))
                         {
                             var firstCol = mapping.ColumnPropertyMap.Keys.First();
@@ -88,26 +87,36 @@ public class ExcelParserService : IExcelParserService
 
                             if (string.IsNullOrWhiteSpace(checkValue) || !checkValue.Contains(mapping.StartKeyword, StringComparison.OrdinalIgnoreCase))
                             {
-                                continue; // Ждём правильного старта
+                                continue; // Ждём корректный старт
                             }
                         }
 
                         modelStarted[mapping.ModelType] = true;
-                        continue; // Старт зафиксирован, переходим на следующую итерацию
+                        continue; // старт модели зафиксирован
                     }
                     else
                     {
-                        continue; // Пока модель не началась — пропускаем
+                        continue; // Пока модель не стартовала
                     }
                 }
 
                 if (!hasData)
                 {
-                    modelActive[mapping.ModelType] = false; // Модель завершилась
+                    emptyRowCounter[mapping.ModelType]++;
+
+                    if (emptyRowCounter[mapping.ModelType] >= mapping.MaxEmptyRows)
+                    {
+                        modelActive[mapping.ModelType] = false; // Завершаем модель
+                    }
+
                     continue;
                 }
+                else
+                {
+                    emptyRowCounter[mapping.ModelType] = 0; // если снова появились данные, обнуляем счётчик
+                }
 
-                // Маппим строку в объект
+                // Нормальный парсинг строки
                 var model = FlexibleRowMapper.MapRowToModel(mapping.ModelType, mapping.ColumnPropertyMap, col => sheet.GetCellValue(row, col));
                 if (model != null)
                 {

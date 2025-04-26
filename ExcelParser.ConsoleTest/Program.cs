@@ -127,13 +127,16 @@ async Task Test3Async()
             .Map(1, x => x.Code)
             .Map(2, x => x.Name)
             .Map(3, x => x.Age)
+            .AllowEmptyRows(2)
             .StartWhen("Код")) // Старт при "Код"
 
         .For<Contract>(map => map
             .Map(5, x => x.ContractNumber)
             .Map(6, x => x.Partner)
             .Map(7, x => x.SigningDate)
-            .StartWhen("Номер договора")) // Старт при "Номер договора"
+            .StartWhen("Номер договора")
+            .AllowEmptyRows(1)
+            ) // Старт при "Номер договора"
 
         .For<Product>(map => map
             .Map(3, x => x.SKU)
