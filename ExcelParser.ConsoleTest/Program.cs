@@ -7,6 +7,8 @@ using ExcelParser.Core.Parsers;
 using ExcelParser.Core.Parsers.Fluent;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
+using ExcelParser.Core.Parsers.Flexible;
+using System.IO;
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 Console.WriteLine("Hello, World!");
@@ -26,8 +28,9 @@ var parserService = provider.GetRequiredService<IExcelParserService>();
 
 
 Stopwatch stopwatch = Stopwatch.StartNew();
-await Test1Async();
+//await Test1Async();
 //await Test2Async();
+await Test3Async();
 stopwatch.Stop();
 Console.WriteLine($"Время выполнения: {stopwatch.ElapsedMilliseconds} мс");
 
@@ -112,6 +115,69 @@ async Task Test2Async()
             Console.WriteLine();
         }
         Console.WriteLine();
+    }
+
+}
+
+async Task Test3Async()
+{
+    // 3. Конфигурация маппинга колонок
+    var mappings = new ModelColumnsMappingBuilder()
+        .For<Employee>(map => map
+            .Map(1, x => x.Code)
+            .Map(2, x => x.Name)
+            .Map(3, x => x.Age)
+            .StartWhen("Код")) // Старт при "Код"
+
+        .For<Contract>(map => map
+            .Map(5, x => x.ContractNumber)
+            .Map(6, x => x.Partner)
+            .Map(7, x => x.SigningDate)
+            .StartWhen("Номер договора")) // Старт при "Номер договора"
+
+        .For<Product>(map => map
+            .Map(3, x => x.SKU)
+            .Map(4, x => x.Name)
+            .Map(5, x => x.Price)
+            .StartWhen("Артикул")) // Старт при "Артикул"
+        .Build();
+
+    
+
+    var sheetFactory = provider.GetRequiredService<IExcelSheetFactory>();
+
+    string path=@"D:\Test\test_flexible.xlsx";
+    using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+    var sheet = await sheetFactory.CreateFromStreamAsync(stream, "Лист1");
+
+    var parsed = await parserService.ParseFlexibleByColumnsAsync(sheet, mappings);
+
+    foreach (var (modelType, models) in parsed)
+    {
+        Console.WriteLine($"\n=== Модель: {modelType.Name} ===");
+        Console.WriteLine($"Количество записей: {models.Count}\n");
+
+        if (models.Count == 0)
+        {
+            Console.WriteLine("Нет данных.\n");
+            continue;
+        }
+
+        var firstItem = models[0];
+        var properties = firstItem.GetType().GetProperties();
+
+        Console.WriteLine(string.Join(" | ", properties.Select(p => p.Name.PadRight(20))));
+        Console.WriteLine(new string('-', properties.Length * 23));
+
+        foreach (var item in models)
+        {
+            foreach (var prop in properties)
+            {
+                var value = prop.GetValue(item)?.ToString() ?? "";
+                Console.Write(value.PadRight(20) + " | ");
+            }
+            Console.WriteLine();
+        }
     }
 
 }

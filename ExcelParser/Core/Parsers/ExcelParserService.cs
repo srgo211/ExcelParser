@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using ExcelParser.Core.Abstractions;
+using ExcelParser.Core.Parsers.Flexible;
 
 namespace ExcelParser.Core.Parsers;
 
@@ -38,6 +39,81 @@ public class ExcelParserService : IExcelParserService
 
             var parsedList = await ParseByTypeAsync(sheet, modelType);
             result.Add(sheetName, parsedList);
+        }
+
+        return result;
+    }
+
+    public async Task<Dictionary<Type, IList>> ParseFlexibleByColumnsAsync(IExcelSheet sheet, List<ModelColumnsMapping> mappings)
+    {
+        var result = new Dictionary<Type, IList>();
+
+        // Создаём списки для каждой модели
+        foreach (var mapping in mappings)
+        {
+            var listType = typeof(List<>).MakeGenericType(mapping.ModelType);
+            result[mapping.ModelType] = (IList)Activator.CreateInstance(listType)!;
+        }
+
+        // Флаги начала и активности моделей
+        var modelStarted = mappings.ToDictionary(m => m.ModelType, _ => false);
+        var modelActive = mappings.ToDictionary(m => m.ModelType, _ => true);
+
+        // Стартовые строки для пропуска заголовков
+        var modelStartRow = mappings.ToDictionary(m => m.ModelType, m => sheet.StartRow + m.SkipRows);
+
+        for (int row = sheet.StartRow + 1; row <= sheet.EndRow; row++)
+        {
+            foreach (var mapping in mappings)
+            {
+                if (!modelActive[mapping.ModelType])
+                    continue;
+
+                // Пропускаем строки до старта модели (если есть Skip)
+                if (row <= modelStartRow[mapping.ModelType])
+                    continue;
+
+                bool hasData = mapping.ColumnPropertyMap.Keys
+                    .Any(col => !string.IsNullOrWhiteSpace(sheet.GetCellValue(row, col)));
+
+                if (!modelStarted[mapping.ModelType])
+                {
+                    if (hasData)
+                    {
+                        // Если требуется, проверяем StartKeyword
+                        if (!string.IsNullOrWhiteSpace(mapping.StartKeyword))
+                        {
+                            var firstCol = mapping.ColumnPropertyMap.Keys.First();
+                            var checkValue = sheet.GetCellValue(row, firstCol);
+
+                            if (string.IsNullOrWhiteSpace(checkValue) || !checkValue.Contains(mapping.StartKeyword, StringComparison.OrdinalIgnoreCase))
+                            {
+                                continue; // Ждём правильного старта
+                            }
+                        }
+
+                        modelStarted[mapping.ModelType] = true;
+                        continue; // Старт зафиксирован, переходим на следующую итерацию
+                    }
+                    else
+                    {
+                        continue; // Пока модель не началась — пропускаем
+                    }
+                }
+
+                if (!hasData)
+                {
+                    modelActive[mapping.ModelType] = false; // Модель завершилась
+                    continue;
+                }
+
+                // Маппим строку в объект
+                var model = FlexibleRowMapper.MapRowToModel(mapping.ModelType, mapping.ColumnPropertyMap, col => sheet.GetCellValue(row, col));
+                if (model != null)
+                {
+                    result[mapping.ModelType].Add(model);
+                }
+            }
         }
 
         return result;
